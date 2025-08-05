@@ -13,7 +13,7 @@ import (
 
 type Consumer struct {
 	reader       *kafka.Reader
-	orderService service.OrderService
+	orderService service.Service
 	log          *slog.Logger
 }
 
@@ -21,7 +21,7 @@ func NewConsumer(
 	brokers []string,
 	topic string,
 	groupID string,
-	orderService service.OrderService,
+	orderService service.Service,
 	log *slog.Logger,
 ) *Consumer {
 	return &Consumer{
@@ -70,11 +70,25 @@ func (c *Consumer) processMessage(ctx context.Context, msg kafka.Message) {
 	var order model.Order
 	if err := json.Unmarshal(msg.Value, &order); err != nil {
 		log.Error("Unmarshal error", "error", err, "message", string(msg.Value))
+		if err := c.reader.CommitMessages(ctx, msg); err != nil {
+			log.Error("Commit error", "error", err)
+		}
+		return
+	}
+
+	if err := order.Validate(); err != nil {
+		log.Error("Invalid order data", "error", err, "order_uid", order.OrderUID)
+		if err := c.reader.CommitMessages(ctx, msg); err != nil {
+			log.Error("Commit error", "error", err)
+		}
 		return
 	}
 
 	if order.OrderUID == "" {
 		log.Error("Received order with empty UID")
+		if err := c.reader.CommitMessages(ctx, msg); err != nil {
+			log.Error("Commit error", "error", err)
+		}
 		return
 	}
 

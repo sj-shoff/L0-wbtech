@@ -6,9 +6,11 @@ import (
 	"L0-wbtech/pkg/errors"
 	"context"
 	"database/sql"
+	stdErrors "errors"
 	"fmt"
 
 	"github.com/jmoiron/sqlx"
+	_ "github.com/lib/pq"
 )
 
 type PostgresStorage struct {
@@ -52,7 +54,6 @@ func (s *PostgresStorage) CreateOrder(ctx context.Context, order *model.Order) e
 	_, err = tx.ExecContext(ctx, orderQuery,
 		order.OrderUID, order.TrackNumber, order.Entry, order.Locale, order.InternalSignature,
 		order.CustomerID, order.DeliveryService, order.Shardkey, order.SmID, order.DateCreated, order.OofShard)
-
 	if err != nil {
 		return fmt.Errorf("%s: insert order failed: %w", op, err)
 	}
@@ -61,46 +62,56 @@ func (s *PostgresStorage) CreateOrder(ctx context.Context, order *model.Order) e
 		INSERT INTO delivery (
 			order_uid, name, phone, zip, city, address, region, email
 		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-		ON CONFLICT (order_uid) DO NOTHING
 	`
 	_, err = tx.ExecContext(ctx, deliveryQuery,
 		order.OrderUID, order.Delivery.Name, order.Delivery.Phone, order.Delivery.Zip,
 		order.Delivery.City, order.Delivery.Address, order.Delivery.Region, order.Delivery.Email)
-
 	if err != nil {
 		return fmt.Errorf("%s: insert delivery failed: %w", op, err)
 	}
 
 	paymentQuery := `
 		INSERT INTO payment (
-			transaction, request_id, currency, provider, amount, 
+			order_uid, transaction, request_id, currency, provider, amount, 
 			payment_dt, bank, delivery_cost, goods_total, custom_fee
-		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-		ON CONFLICT (transaction) DO NOTHING
+		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
 	`
 	_, err = tx.ExecContext(ctx, paymentQuery,
-		order.Payment.Transaction, order.Payment.RequestID, order.Payment.Currency,
-		order.Payment.Provider, order.Payment.Amount, order.Payment.PaymentDt,
-		order.Payment.Bank, order.Payment.DeliveryCost, order.Payment.GoodsTotal,
+		order.OrderUID,
+		order.Payment.Transaction,
+		order.Payment.RequestID,
+		order.Payment.Currency,
+		order.Payment.Provider,
+		order.Payment.Amount,
+		order.Payment.PaymentDt,
+		order.Payment.Bank,
+		order.Payment.DeliveryCost,
+		order.Payment.GoodsTotal,
 		order.Payment.CustomFee)
-
 	if err != nil {
 		return fmt.Errorf("%s: insert payment failed: %w", op, err)
 	}
 
 	itemQuery := `
 		INSERT INTO items (
-			chrt_id, order_uid, track_number, price, rid, name, 
+			order_uid, chrt_id, track_number, price, rid, name, 
 			sale, size, total_price, nm_id, brand, status
 		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
-		ON CONFLICT (chrt_id) DO NOTHING
 	`
 	for _, item := range order.Items {
 		_, err = tx.ExecContext(ctx, itemQuery,
-			item.ChrtID, order.OrderUID, item.TrackNumber, item.Price, item.Rid,
-			item.Name, item.Sale, item.Size, item.TotalPrice, item.NmID,
-			item.Brand, item.Status)
-
+			order.OrderUID,
+			item.ChrtID,
+			item.TrackNumber,
+			item.Price,
+			item.Rid,
+			item.Name,
+			item.Sale,
+			item.Size,
+			item.TotalPrice,
+			item.NmID,
+			item.Brand,
+			item.Status)
 		if err != nil {
 			return fmt.Errorf("%s: insert item failed: %w", op, err)
 		}
@@ -132,7 +143,7 @@ func (s *PostgresStorage) GetOrder(ctx context.Context, orderUID string) (*model
 		return nil, fmt.Errorf("%s: get delivery failed: %w", op, err)
 	}
 
-	paymentQuery := `SELECT * FROM payment WHERE transaction = $1`
+	paymentQuery := `SELECT * FROM payment WHERE order_uid = $1`
 	err = s.db.GetContext(ctx, &order.Payment, paymentQuery, orderUID)
 	if err != nil {
 		return nil, fmt.Errorf("%s: get payment failed: %w", op, err)
@@ -161,6 +172,9 @@ func (s *PostgresStorage) GetAllOrders(ctx context.Context) (map[string]*model.O
 	for _, uid := range uids {
 		order, err := s.GetOrder(ctx, uid)
 		if err != nil {
+			if stdErrors.Is(err, errors.ErrNotFound) {
+				continue
+			}
 			return nil, fmt.Errorf("%s: get order %s failed: %w", op, uid, err)
 		}
 		orders[uid] = order

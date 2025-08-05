@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Order Viewer</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        pre { background: #f4f4f4; padding: 10px; }
+    </style>
+</head>
+<body>
+    <h1>Order Viewer</h1>
+    <div>
+        <label for="orderUid">Order UID:</label>
+        <input type="text" id="orderUid" placeholder="Enter order UID" value="b563feb7b2b84b6test">
+        <button onclick="getOrder()">Get Order</button>
+    </div>
+    <pre id="orderData"></pre>
+
+    <script>
+        async function getOrder() {
+            const orderUid = document.getElementById('orderUid').value;
+            if (!orderUid) {
+                alert('Please enter Order UID');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/order/${orderUid}`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const order = await response.json();
+                document.getElementById('orderData').innerText = 
+                    JSON.stringify(order, null, 2);
+            } catch (error) {
+                document.getElementById('orderData').innerText = `Error: ${error.message}`;
+            }
+        }
+        
+        window.onload = function() {
+            getOrder();
+        };
+    </script>
+</body>
+</html>

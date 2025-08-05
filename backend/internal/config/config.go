@@ -67,7 +67,7 @@ func fetchConfigPath() string {
 		return envPath
 	}
 
-	return "config.yaml"
+	return "configs/config.yaml"
 }
 
 func loadSecrets(cfg *Config) {

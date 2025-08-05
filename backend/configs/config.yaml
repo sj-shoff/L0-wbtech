@@ -1,14 +1,15 @@
 env: local
 
 server:
-  port: "8080"
+  port: "8081"
 
 postgres:
-  host: "localhost"
+  host: postgres
   port: "5432"
-  username: "app_user"
-  dbname: "orders_db"
-  sslmode: "disable"
+  username: postgres
+  password: ""
+  dbname: postgres
+  sslmode: disable
 
 kafka:
   brokers:

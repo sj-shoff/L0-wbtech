@@ -23,6 +23,7 @@ func main() {
 	cfg := config.MustLoad()
 
 	log := setupLogger(cfg.Env)
+	log.Info("Starting server", "env", cfg.Env, "storage", cfg.Database)
 
 	storage, err := postgres.NewPostgresDB(cfg.Database)
 	if err != nil {

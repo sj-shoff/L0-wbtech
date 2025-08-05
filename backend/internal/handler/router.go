@@ -13,11 +13,11 @@ import (
 )
 
 type APIHandler struct {
-	service service.OrderService
+	service service.Service
 	log     *slog.Logger
 }
 
-func New(service service.OrderService, log *slog.Logger) *APIHandler {
+func New(service service.Service, log *slog.Logger) *APIHandler {
 	return &APIHandler{
 		service: service,
 		log:     log,
@@ -26,11 +26,11 @@ func New(service service.OrderService, log *slog.Logger) *APIHandler {
 
 func (h *APIHandler) RegisterRoutes(router *gin.Engine) {
 
-	router.GET("/api/order/:uid", h.GetOrder)
+	router.GET("/order/:uid", h.GetOrder)
 
-	router.StaticFile("/", "./web/index.html")
-	router.StaticFile("/index.html", "./web/index.html")
-	router.StaticFile("/script.js", "./web/script.js")
+	router.StaticFile("/", "./frontend/index.html")
+	router.StaticFile("/index.html", "./frontend/index.html")
+	router.StaticFile("/script.js", "./frontend/script.js")
 }
 
 func (h *APIHandler) GetOrder(c *gin.Context) {

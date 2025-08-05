@@ -20,14 +20,14 @@ import (
 type App struct {
 	cfg          *config.Config
 	log          *slog.Logger
-	orderService service.OrderService
+	orderService service.Service
 	consumer     *kafka.Consumer
 	httpServer   *http.Server
 }
 
 func New(
 	cfg *config.Config,
-	orderService service.OrderService,
+	orderService service.Service,
 	consumer *kafka.Consumer,
 	log *slog.Logger,
 ) *App {
@@ -41,7 +41,7 @@ func New(
 
 func NewKafkaConsumer(
 	cfg *config.Config,
-	service service.OrderService,
+	service service.Service,
 	log *slog.Logger,
 ) *kafka.Consumer {
 	return kafka.NewConsumer(

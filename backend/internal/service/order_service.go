@@ -22,7 +22,7 @@ func NewOrderService(
 	storage storage.Storage,
 	cache cache.Cache,
 	log *slog.Logger,
-) OrderService {
+) Service {
 	return &orderService{
 		storage: storage,
 		cache:   cache,
