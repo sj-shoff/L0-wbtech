@@ -30,9 +30,6 @@ func (c *inMemoryCache) Set(order *model.Order) {
 func (c *inMemoryCache) Get(uid string) (*model.Order, bool) {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
-
-	if order, ok := c.data[uid]; ok {
-		return order, true
-	}
-	return nil, false
+	order, ok := c.data[uid]
+	return order, ok
 }

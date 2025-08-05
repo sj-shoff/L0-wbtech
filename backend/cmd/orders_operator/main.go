@@ -1,12 +1,14 @@
 package main
 
 import (
+	"L0-wbtech/internal/app"
 	"L0-wbtech/internal/cache"
 	"L0-wbtech/internal/config"
 	"L0-wbtech/internal/service"
 	"L0-wbtech/internal/storage/postgres"
 	"L0-wbtech/pkg/logger/sl"
 	"L0-wbtech/pkg/logger/slogpretty"
+	"context"
 	"log/slog"
 	"os"
 )
@@ -18,11 +20,9 @@ const (
 )
 
 func main() {
-
 	cfg := config.MustLoad()
 
 	log := setupLogger(cfg.Env)
-	log.Info("Starting server", "env", cfg.Env)
 
 	storage, err := postgres.NewPostgresDB(cfg.Database)
 	if err != nil {
@@ -32,11 +32,16 @@ func main() {
 
 	orderCache := cache.NewCache()
 
-	service := service.NewOrderService(storage, orderCache, log)
+	orderService := service.NewOrderService(storage, orderCache, log)
 
-	// handler
+	if err := orderService.RestoreCache(context.Background()); err != nil {
+		log.Error("Failed to restore cache", sl.Err(err))
+	}
 
-	// graceful shutdown
+	consumer := app.NewKafkaConsumer(cfg, orderService, log)
+
+	application := app.New(cfg, orderService, consumer, log)
+	application.Run()
 }
 
 func setupLogger(env string) *slog.Logger {
