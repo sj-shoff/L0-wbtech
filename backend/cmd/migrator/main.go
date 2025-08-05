@@ -15,6 +15,8 @@ import (
 func main() {
 	cfg := config.MustLoad()
 
+	log := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{}))
+
 	migrationsPath := flag.String("migrations-path", "", "Path to migrations")
 	flag.Parse()
 
@@ -23,7 +25,7 @@ func main() {
 	}
 
 	if *migrationsPath == "" {
-		slog.Error("Migrations path is required")
+		log.Error("Migrations path is required")
 		os.Exit(1)
 	}
 
@@ -36,23 +38,26 @@ func main() {
 		cfg.Database.SSLMode,
 	)
 
+	log.Info("Connecting to database", "dsn", dsn)
+
 	m, err := migrate.New(
 		"file://"+*migrationsPath,
 		dsn,
 	)
 	if err != nil {
-		slog.Error("Migration initialization failed", "error", err)
+		log.Error("Migration initialization failed", "error", err)
 		os.Exit(1)
 	}
 
+	log.Info("Applying migrations", "path", *migrationsPath)
 	if err := m.Up(); err != nil {
 		if err == migrate.ErrNoChange {
-			slog.Info("No new migrations to apply")
+			log.Info("No new migrations to apply")
 			return
 		}
-		slog.Error("Migration failed", "error", err)
+		log.Error("Migration failed", "error", err)
 		os.Exit(1)
 	}
 
-	slog.Info("Migrations applied successfully")
+	log.Info("Migrations applied successfully")
 }

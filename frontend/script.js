@@ -1,221 +1,202 @@
-function getOrder() {
-    const orderId = document.getElementById('orderId').value.trim();
-    if (!orderId) {
-        showError('Please enter an Order UID');
+let currentOrder = null;
+
+async function getOrder() {
+    const orderUid = document.getElementById('orderUid').value;
+    if (!orderUid) {
+        showError('Please enter Order UID');
         return;
     }
-
-    // Reset UI
+    
+    showLoading(true);
     hideError();
-    hideSuccess();
-    showLoading();
-    hideOrderInfo();
-
-    // Make API request
-    fetch(`/api/order/${orderId}`)
-        .then(response => {
-            if (!response.ok) {
-                return response.json().then(err => {
-                    throw new Error(err.error || `Error: ${response.status} ${response.statusText}`);
-                });
-            }
-            return response.json();
-        })
-        .then(order => {
-            hideLoading();
-            renderOrder(order);
-            showSuccess(`Order ${orderId} loaded successfully`);
-        })
-        .catch(error => {
-            hideLoading();
-            showError(error.message);
-        });
+    hideOrderDetails();
+    hideJsonViewer();
+    
+    try {
+        const response = await fetch(`/api/order/${orderUid}`);
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`HTTP error! Status: ${response.status}, Message: ${errorText}`);
+        }
+        
+        currentOrder = await response.json();
+        displayOrder(currentOrder);
+        showOrderDetails();
+        showLoading(false);
+    } catch (error) {
+        showError(`Error: ${error.message}`);
+        showLoading(false);
+    }
 }
 
-function renderOrder(order) {
-    const container = document.getElementById('orderInfo');
+function displayOrder(order) {
     
-    let html = `
-        <div class="order-section">
-            <h3>Order Information</h3>
-            <div class="field">
-                <strong>Order UID:</strong>
-                <span class="field-value">${order.order_uid}</span>
-            </div>
-            <div class="field">
-                <strong>Track Number:</strong>
-                <span class="field-value">${order.track_number}</span>
-            </div>
-            <div class="field">
-                <strong>Entry:</strong>
-                <span class="field-value">${order.entry}</span>
-            </div>
-            <div class="field">
-                <strong>Locale:</strong>
-                <span class="field-value">${order.locale}</span>
-            </div>
-            <div class="field">
-                <strong>Customer ID:</strong>
-                <span class="field-value">${order.customer_id}</span>
-            </div>
-            <div class="field">
-                <strong>Delivery Service:</strong>
-                <span class="field-value">${order.delivery_service}</span>
-            </div>
-            <div class="field">
-                <strong>Date Created:</strong>
-                <span class="field-value">${order.date_created}</span>
-            </div>
+    document.getElementById('orderInfo').innerHTML = `
+        <div class="info-item">
+            <strong>Order UID</strong>
+            <span>${order.order_uid}</span>
         </div>
-        
-        <div class="order-section">
-            <h3>Delivery Information</h3>
-            <div class="field">
-                <strong>Name:</strong>
-                <span class="field-value">${order.delivery.name}</span>
-            </div>
-            <div class="field">
-                <strong>Phone:</strong>
-                <span class="field-value">${order.delivery.phone}</span>
-            </div>
-            <div class="field">
-                <strong>Zip Code:</strong>
-                <span class="field-value">${order.delivery.zip}</span>
-            </div>
-            <div class="field">
-                <strong>City:</strong>
-                <span class="field-value">${order.delivery.city}</span>
-            </div>
-            <div class="field">
-                <strong>Address:</strong>
-                <span class="field-value">${order.delivery.address}</span>
-            </div>
-            <div class="field">
-                <strong>Region:</strong>
-                <span class="field-value">${order.delivery.region}</span>
-            </div>
-            <div class="field">
-                <strong>Email:</strong>
-                <span class="field-value">${order.delivery.email}</span>
-            </div>
+        <div class="info-item">
+            <strong>Track Number</strong>
+            <span>${order.track_number}</span>
         </div>
-        
-        <div class="order-section">
-            <h3>Payment Information</h3>
-            <div class="field">
-                <strong>Transaction ID:</strong>
-                <span class="field-value">${order.payment.transaction}</span>
-            </div>
-            <div class="field">
-                <strong>Currency:</strong>
-                <span class="field-value">${order.payment.currency}</span>
-            </div>
-            <div class="field">
-                <strong>Provider:</strong>
-                <span class="field-value">${order.payment.provider}</span>
-            </div>
-            <div class="field">
-                <strong>Amount:</strong>
-                <span class="field-value">$${(order.payment.amount / 100).toFixed(2)}</span>
-            </div>
-            <div class="field">
-                <strong>Payment Date:</strong>
-                <span class="field-value">${new Date(order.payment.payment_dt * 1000).toLocaleString()}</span>
-            </div>
-            <div class="field">
-                <strong>Bank:</strong>
-                <span class="field-value">${order.payment.bank}</span>
-            </div>
+        <div class="info-item">
+            <strong>Entry</strong>
+            <span>${order.entry}</span>
         </div>
-        
-        <div class="order-section">
-            <h3>Items (${order.items.length})</h3>
-            <div class="items-container">
+        <div class="info-item">
+            <strong>Customer ID</strong>
+            <span>${order.customer_id}</span>
+        </div>
+        <div class="info-item">
+            <strong>Date Created</strong>
+            <span>${new Date(order.date_created).toLocaleString()}</span>
+        </div>
+        <div class="info-item">
+            <strong>Delivery Service</strong>
+            <span>${order.delivery_service}</span>
+        </div>
     `;
-
+    
+    const delivery = order.delivery;
+    document.getElementById('deliveryInfo').innerHTML = `
+        <div class="info-item">
+            <strong>Name</strong>
+            <span>${delivery.name}</span>
+        </div>
+        <div class="info-item">
+            <strong>Phone</strong>
+            <span>${delivery.phone}</span>
+        </div>
+        <div class="info-item">
+            <strong>Email</strong>
+            <span>${delivery.email}</span>
+        </div>
+        <div class="info-item">
+            <strong>Address</strong>
+            <span>${delivery.city}, ${delivery.address}</span>
+        </div>
+        <div class="info-item">
+            <strong>Region</strong>
+            <span>${delivery.region}</span>
+        </div>
+        <div class="info-item">
+            <strong>ZIP Code</strong>
+            <span>${delivery.zip}</span>
+        </div>
+    `;
+    
+    const payment = order.payment;
+    document.getElementById('paymentInfo').innerHTML = `
+        <div class="info-item">
+            <strong>Transaction</strong>
+            <span>${payment.transaction}</span>
+        </div>
+        <div class="info-item">
+            <strong>Amount</strong>
+            <span>$${(payment.amount / 100).toFixed(2)}</span>
+        </div>
+        <div class="info-item">
+            <strong>Currency</strong>
+            <span>${payment.currency}</span>
+        </div>
+        <div class="info-item">
+            <strong>Provider</strong>
+            <span>${payment.provider}</span>
+        </div>
+        <div class="info-item">
+            <strong>Bank</strong>
+            <span>${payment.bank}</span>
+        </div>
+        <div class="info-item">
+            <strong>Payment Date</strong>
+            <span>${new Date(payment.payment_dt * 1000).toLocaleString()}</span>
+        </div>
+    `;
+    
+    let itemsHtml = '';
     order.items.forEach(item => {
-        html += `
+        itemsHtml += `
             <div class="item-card">
-                <div class="field">
-                    <strong>Name:</strong>
-                    <span class="field-value">${item.name}</span>
-                </div>
-                <div class="field">
-                    <strong>Brand:</strong>
-                    <span class="field-value">${item.brand}</span>
-                </div>
-                <div class="field">
-                    <strong>Price:</strong>
-                    <span class="field-value">$${(item.price / 100).toFixed(2)}</span>
-                </div>
-                <div class="field">
-                    <strong>Sale:</strong>
-                    <span class="field-value">${item.sale}%</span>
-                </div>
-                <div class="field">
-                    <strong>Size:</strong>
-                    <span class="field-value">${item.size}</span>
-                </div>
-                <div class="field">
-                    <strong>Status:</strong>
-                    <span class="field-value">${item.status}</span>
-                </div>
-                <div class="field">
-                    <strong>Total Price:</strong>
-                    <span class="field-value">$${(item.total_price / 100).toFixed(2)}</span>
+                <h3>${item.name} <span class="brand">(${item.brand})</span></h3>
+                <div class="info-grid">
+                    <div class="info-item">
+                        <strong>Price</strong>
+                        <span>$${(item.price / 100).toFixed(2)}</span>
+                    </div>
+                    <div class="info-item">
+                        <strong>Sale</strong>
+                        <span>${item.sale}%</span>
+                    </div>
+                    <div class="info-item">
+                        <strong>Total</strong>
+                        <span>$${(item.total_price / 100).toFixed(2)}</span>
+                    </div>
+                    <div class="info-item">
+                        <strong>Size</strong>
+                        <span>${item.size}</span>
+                    </div>
+                    <div class="info-item">
+                        <strong>Status</strong>
+                        <span class="status status-${item.status}">${item.status}</span>
+                    </div>
+                    <div class="info-item">
+                        <strong>Brand</strong>
+                        <span>${item.brand}</span>
+                    </div>
                 </div>
             </div>
         `;
     });
-
-    html += `
-            </div>
-        </div>
-    `;
-
-    container.innerHTML = html;
-    showOrderInfo();
+    
+    document.getElementById('itemsList').innerHTML = itemsHtml;
+    document.getElementById('itemsCount').textContent = order.items.length;
+    
+    document.getElementById('jsonViewer').textContent = 
+        JSON.stringify(order, null, 2);
 }
 
-// UI helper functions
-function showLoading() {
-    document.getElementById('loading').style.display = 'block';
+function toggleJson() {
+    const viewer = document.getElementById('jsonViewer');
+    viewer.style.display = viewer.style.display === 'none' ? 'block' : 'none';
 }
 
-function hideLoading() {
-    document.getElementById('loading').style.display = 'none';
+function showLoading(show) {
+    document.getElementById('loading').style.display = show ? 'flex' : 'none';
 }
 
-function showOrderInfo() {
-    document.getElementById('orderInfo').style.display = 'block';
+function showOrderDetails() {
+    document.getElementById('orderDetails').classList.add('active');
 }
 
-function hideOrderInfo() {
-    document.getElementById('orderInfo').style.display = 'none';
+function hideOrderDetails() {
+    document.getElementById('orderDetails').classList.remove('active');
 }
 
 function showError(message) {
-    const errorContainer = document.getElementById('errorContainer');
-    errorContainer.textContent = message;
-    errorContainer.style.display = 'block';
+    const errorEl = document.getElementById('error');
+    errorEl.textContent = message;
+    errorEl.style.display = 'block';
 }
 
 function hideError() {
-    document.getElementById('errorContainer').style.display = 'none';
+    document.getElementById('error').style.display = 'none';
 }
 
-function showSuccess(message) {
-    const successContainer = document.getElementById('successMessage');
-    successContainer.textContent = message;
-    successContainer.style.display = 'block';
+function showJsonViewer() {
+    document.getElementById('jsonViewer').style.display = 'block';
 }
 
-function hideSuccess() {
-    document.getElementById('successMessage').style.display = 'none';
+function hideJsonViewer() {
+    document.getElementById('jsonViewer').style.display = 'none';
 }
 
-// Initialize the page
 document.addEventListener('DOMContentLoaded', () => {
-    // Example of a valid order ID for quick testing
-    document.getElementById('orderId').value = 'b563feb7b2b84b6test';
+    getOrder();
+    
+    document.getElementById('orderUid').addEventListener('keyup', event => {
+        if (event.key === 'Enter') {
+            getOrder();
+        }
+    });
 });

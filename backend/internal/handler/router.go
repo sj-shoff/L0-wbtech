@@ -28,9 +28,6 @@ func (h *APIHandler) RegisterRoutes(router *gin.Engine) {
 
 	router.GET("/order/:uid", h.GetOrder)
 
-	router.StaticFile("/", "./frontend/index.html")
-	router.StaticFile("/index.html", "./frontend/index.html")
-	router.StaticFile("/script.js", "./frontend/script.js")
 }
 
 func (h *APIHandler) GetOrder(c *gin.Context) {

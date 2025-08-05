@@ -14,7 +14,7 @@ COPY . .
 RUN go build -ldflags="-w -s" -o app ./cmd/app/main.go
 RUN go build -ldflags="-w -s" -o migrator ./cmd/migrator/main.go
 
-FROM alpine:latest
+FROM alpine:3.20
 
 RUN apk add --no-cache \
     postgresql15-client \
@@ -23,12 +23,12 @@ RUN apk add --no-cache \
 
 WORKDIR /app
 
+COPY --from=builder /app/wait-for-postgres.sh /app/
+RUN chmod +x /app/wait-for-postgres.sh
+
 COPY --from=builder /app/migrator /app/app ./
 COPY --from=builder /app/configs ./configs
 COPY --from=builder /app/migrations ./migrations
 COPY --from=builder /app/order.json .
-COPY --from=builder /app/frontend ./frontend
 
 ENV CONFIG_PATH=/app/configs/config.yaml
-
-CMD ["./app"]

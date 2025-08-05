@@ -3,6 +3,7 @@ package kafka
 import (
 	"L0-wbtech/internal/model"
 	"L0-wbtech/internal/service"
+	"L0-wbtech/pkg/logger/sl"
 	"context"
 	"encoding/json"
 	"log/slog"
@@ -21,9 +22,14 @@ func NewConsumer(
 	brokers []string,
 	topic string,
 	groupID string,
-	orderService service.Service,
+	service service.Service,
 	log *slog.Logger,
 ) *Consumer {
+	log.Info("Creating Kafka consumer",
+		"brokers", brokers,
+		"topic", topic,
+		"groupID", groupID)
+
 	return &Consumer{
 		reader: kafka.NewReader(kafka.ReaderConfig{
 			Brokers:        brokers,
@@ -31,17 +37,24 @@ func NewConsumer(
 			GroupID:        groupID,
 			MinBytes:       10e3,
 			MaxBytes:       10e6,
-			MaxWait:        1 * time.Second,
+			MaxWait:        30 * time.Second,
 			StartOffset:    kafka.LastOffset,
 			CommitInterval: 0,
+			Dialer: &kafka.Dialer{
+				Timeout:   60 * time.Second,
+				DualStack: true,
+			},
 		}),
-		orderService: orderService,
+		orderService: service,
 		log:          log,
 	}
 }
 
 func (c *Consumer) Start(ctx context.Context) {
-	log := c.log.With("operation", "kafka.Consumer.Start")
+
+	const op = "kafka.Consumer.Start"
+	log := c.log.With(slog.String("op", op))
+
 	log.Info("Starting Kafka consumer")
 
 	for {
@@ -55,7 +68,7 @@ func (c *Consumer) Start(ctx context.Context) {
 				if ctx.Err() != nil {
 					return
 				}
-				log.Error("Fetch error", "error", err)
+				log.Error("Fetch error", sl.Err(err))
 				continue
 			}
 
@@ -65,21 +78,23 @@ func (c *Consumer) Start(ctx context.Context) {
 }
 
 func (c *Consumer) processMessage(ctx context.Context, msg kafka.Message) {
-	log := c.log.With("operation", "kafka.Consumer.processMessage")
+
+	const op = "kafka.Consumer.processMessage"
+	log := c.log.With(slog.String("op", op))
 
 	var order model.Order
 	if err := json.Unmarshal(msg.Value, &order); err != nil {
-		log.Error("Unmarshal error", "error", err, "message", string(msg.Value))
+		log.Error("Unmarshal error", sl.Err(err), "message", string(msg.Value))
 		if err := c.reader.CommitMessages(ctx, msg); err != nil {
-			log.Error("Commit error", "error", err)
+			log.Error("Commit error", sl.Err(err))
 		}
 		return
 	}
 
 	if err := order.Validate(); err != nil {
-		log.Error("Invalid order data", "error", err, "order_uid", order.OrderUID)
+		log.Error("Invalid order data", sl.Err(err), "order_uid", order.OrderUID)
 		if err := c.reader.CommitMessages(ctx, msg); err != nil {
-			log.Error("Commit error", "error", err)
+			log.Error("Commit error", sl.Err(err))
 		}
 		return
 	}
@@ -87,7 +102,7 @@ func (c *Consumer) processMessage(ctx context.Context, msg kafka.Message) {
 	if order.OrderUID == "" {
 		log.Error("Received order with empty UID")
 		if err := c.reader.CommitMessages(ctx, msg); err != nil {
-			log.Error("Commit error", "error", err)
+			log.Error("Commit error", sl.Err(err))
 		}
 		return
 	}
@@ -96,12 +111,12 @@ func (c *Consumer) processMessage(ctx context.Context, msg kafka.Message) {
 	log.Info("Processing order")
 
 	if err := c.orderService.CreateOrder(ctx, &order); err != nil {
-		log.Error("Failed to create order", "error", err)
+		log.Error("Failed to create order", sl.Err(err))
 		return
 	}
 
 	if err := c.reader.CommitMessages(ctx, msg); err != nil {
-		log.Error("Commit error", "error", err)
+		log.Error("Commit error", sl.Err(err))
 	} else {
 		log.Info("Message committed")
 	}
