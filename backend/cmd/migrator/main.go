@@ -2,6 +2,7 @@ package main
 
 import (
 	"L0-wbtech/internal/config"
+	"L0-wbtech/pkg/logger/sl"
 	"flag"
 	"fmt"
 	"log/slog"
@@ -13,12 +14,13 @@ import (
 )
 
 func main() {
-	cfg := config.MustLoad()
-
-	log := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{}))
 
 	migrationsPath := flag.String("migrations-path", "", "Path to migrations")
 	flag.Parse()
+
+	cfg := config.MustLoad()
+
+	log := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{}))
 
 	if *migrationsPath == "" {
 		*migrationsPath = cfg.Migrations
@@ -45,7 +47,7 @@ func main() {
 		dsn,
 	)
 	if err != nil {
-		log.Error("Migration initialization failed", "error", err)
+		log.Error("Migration initialization failed", sl.Err(err))
 		os.Exit(1)
 	}
 
@@ -55,7 +57,7 @@ func main() {
 			log.Info("No new migrations to apply")
 			return
 		}
-		log.Error("Migration failed", "error", err)
+		log.Error("Migration failed", sl.Err(err))
 		os.Exit(1)
 	}
 

@@ -11,7 +11,7 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql/data:rw
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d postgres"]
       interval: 5s
@@ -44,7 +44,12 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    command: ["./wait-for-postgres.sh", "postgres", "5432", "./migrator", "--migrations-path=./migrations"]  # ИЗМЕНЕНО: добавлен скрипт ожидания
+    command: 
+      - ./wait-for-postgres.sh
+      - postgres
+      - "5432"
+      - ./migrator
+      - --migrations-path=./migrations
     env_file: .env
     environment:
       POSTGRES_USER: postgres
@@ -59,7 +64,11 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    command: ["./wait-for-postgres.sh", "postgres", "5432", "./app"]  # ИЗМЕНЕНО: добавлен скрипт ожидания
+    command:
+      - ./wait-for-postgres.sh
+      - postgres
+      - "5432"
+      - ./app
     env_file: .env
     environment:
       POSTGRES_USER: postgres
@@ -74,14 +83,14 @@ services:
       kafka:
         condition: service_healthy
       migrator:
-        condition: service_completed_successfully  # ИЗМЕНЕНО: ожидание завершения миграций
+        condition: service_completed_successfully
 
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
     ports:
-      - "8080:80"
+      - "8084:80"
     depends_on:
       - backend
 
