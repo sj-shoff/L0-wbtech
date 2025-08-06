@@ -1,20 +1,22 @@
 package model
 
+import "time"
+
 type Order struct {
-	OrderUID          string   `json:"order_uid"`
-	TrackNumber       string   `json:"track_number"`
-	Entry             string   `json:"entry"`
-	Delivery          Delivery `json:"delivery"`
-	Payment           Payment  `json:"payment"`
-	Items             []Item   `json:"items"`
-	Locale            string   `json:"locale"`
-	InternalSignature string   `json:"internal_signature"`
-	CustomerID        string   `json:"customer_id"`
-	DeliveryService   string   `json:"delivery_service"`
-	Shardkey          string   `json:"shardkey"`
-	SmID              int      `json:"sm_id"`
-	DateCreated       string   `json:"date_created"`
-	OofShard          string   `json:"oof_shard"`
+	OrderUID          string    `db:"order_uid" json:"order_uid"`
+	TrackNumber       string    `db:"track_number" json:"track_number"`
+	Entry             string    `db:"entry" json:"entry"`
+	Delivery          Delivery  `json:"delivery"`
+	Payment           Payment   `json:"payment"`
+	Items             []Item    `json:"items"`
+	Locale            string    `db:"locale" json:"locale"`
+	InternalSignature string    `db:"internal_signature" json:"internal_signature"`
+	CustomerID        string    `db:"customer_id" json:"customer_id"`
+	DeliveryService   string    `db:"delivery_service" json:"delivery_service"`
+	Shardkey          string    `db:"shardkey" json:"shardkey"`
+	SmID              int       `db:"sm_id" json:"sm_id"`
+	DateCreated       time.Time `db:"date_created" json:"date_created"`
+	OofShard          string    `db:"oof_shard" json:"oof_shard"`
 }
 
 type Delivery struct {

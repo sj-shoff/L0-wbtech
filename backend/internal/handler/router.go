@@ -26,7 +26,7 @@ func New(service service.Service, log *slog.Logger) *APIHandler {
 
 func (h *APIHandler) RegisterRoutes(router *gin.Engine) {
 
-	router.GET("/order/:uid", h.GetOrder)
+	router.GET("/order/:order_uid", h.GetOrder)
 
 }
 
@@ -36,7 +36,7 @@ func (h *APIHandler) GetOrder(c *gin.Context) {
 		slog.String("op", op),
 	)
 
-	orderUID := c.Param("uid")
+	orderUID := c.Param("order_uid")
 	if orderUID == "" {
 		log.Error("order_uid is empty")
 		c.JSON(http.StatusBadRequest, gin.H{"error": "order_uid is required"})
