@@ -1,0 +1,21 @@
+env: local
+
+server:
+  port: "8081"
+
+postgres:
+  host: postgres
+  port: "5432"
+  username: postgres
+  password: ""
+  dbname: postgres
+  sslmode: disable
+
+kafka:
+  brokers:
+    - "kafka:9092"
+  topic: "orders"
+  group_id: "order-service-group"
+  init_timeout: "30s"
+
+migrations: "./migrations"
