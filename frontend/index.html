@@ -186,6 +186,9 @@
             padding: 40px;
             font-size: 1.2rem;
             color: #666;
+            display: none;
+            flex-direction: column;
+            align-items: center;
         }
         
         .loading i {
@@ -213,13 +216,18 @@
             background: #2d2d2d;
             color: #f8f8f2;
             border-radius: 8px;
-            padding: 20px;
+            padding: 0 20px;
             font-family: 'Courier New', monospace;
             font-size: 14px;
-            margin-top: 20px;
-            max-height: 400px;
-            overflow: auto;
-            display: none;
+            margin-top: 15px;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.5s ease, padding 0.5s ease;
+        }
+        
+        .json-viewer.open {
+            padding: 20px;
+            max-height: 5000px;
         }
         
         .json-toggle {
@@ -231,6 +239,9 @@
             cursor: pointer;
             margin-top: 15px;
             font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
         
         .json-toggle:hover {
@@ -287,7 +298,9 @@
                 <div class="items-grid" id="itemsList"></div>
             </div>
             
-            <button class="json-toggle" onclick="toggleJson()">Toggle JSON View</button>
+            <button class="json-toggle" onclick="toggleJson()">
+                <i class="fas fa-code"></i> Toggle JSON View
+            </button>
             <pre class="json-viewer" id="jsonViewer"></pre>
         </div>
         

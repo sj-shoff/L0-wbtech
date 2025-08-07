@@ -3,9 +3,9 @@ package main
 import (
 	"L0-wbtech/internal/config"
 	"L0-wbtech/pkg/logger/sl"
+	"L0-wbtech/pkg/logger/slogsetup"
 	"flag"
 	"fmt"
-	"log/slog"
 	"os"
 
 	"github.com/golang-migrate/migrate/v4"
@@ -20,7 +20,7 @@ func main() {
 
 	cfg := config.MustLoad()
 
-	log := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{}))
+	log := slogsetup.SetupLogger(cfg.Env)
 
 	if *migrationsPath == "" {
 		*migrationsPath = cfg.Migrations
