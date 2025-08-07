@@ -158,7 +158,7 @@ function displayOrder(order) {
 
 function toggleJson() {
     const viewer = document.getElementById('jsonViewer');
-    viewer.classList.toggle('open');
+    viewer.style.display = viewer.style.display === 'none' ? 'block' : 'none';
     
 }
 
