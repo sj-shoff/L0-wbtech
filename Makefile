@@ -1,4 +1,4 @@
-.PHONY: build run migrate send-order test-api
+.PHONY: build run migrate send-order test-api migrate-down
 
 build:
 	docker-compose build
@@ -8,6 +8,9 @@ run:
 
 migrate:
 	docker-compose run --rm migrator
+
+migrate-down:
+	docker-compose run --rm migrator --down
 
 send-order:
 	tr -d '\n' < ./backend/order.json | docker-compose exec -T kafka sh -c 'kafka-console-producer --broker-list kafka:9092 --topic orders'

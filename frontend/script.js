@@ -13,7 +13,7 @@ async function getOrder() {
     hideJsonViewer();
     
     try {
-        const response = await fetch(`/order/${orderUid}`);
+        const response = await fetch(`/api/order/${orderUid}`);
         if (!response.ok) {
             const errorText = await response.text();
             throw new Error(`HTTP error! Status: ${response.status}, Message: ${errorText}`);
