@@ -124,10 +124,19 @@ func requestLogger(log *slog.Logger) gin.HandlerFunc {
 		path := c.Request.URL.Path
 		query := c.Request.URL.RawQuery
 
+		dataFetchStart := time.Now()
+		c.Set("data_fetch_start", dataFetchStart)
+
 		c.Next()
 
 		end := time.Now()
 		latency := end.Sub(start)
+
+		dataFetchTime := time.Duration(0)
+		if startVal, exists := c.Get("data_fetch_start"); exists {
+			dataFetchStart = startVal.(time.Time)
+			dataFetchTime = end.Sub(dataFetchStart)
+		}
 
 		log.Info("request",
 			"status", c.Writer.Status(),
@@ -137,6 +146,7 @@ func requestLogger(log *slog.Logger) gin.HandlerFunc {
 			"ip", c.ClientIP(),
 			"user-agent", c.Request.UserAgent(),
 			"latency", latency,
+			"data_fetch_time", dataFetchTime,
 		)
 	}
 }
