@@ -14,8 +14,8 @@ import (
 )
 
 func main() {
+
 	migrationsPath := flag.String("migrations-path", "", "Path to migrations")
-	migrateDown := flag.Bool("down", false, "Run migrations down (rollback)")
 	flag.Parse()
 
 	cfg := config.MustLoad()
@@ -51,27 +51,15 @@ func main() {
 		os.Exit(1)
 	}
 
-	if *migrateDown {
-		log.Info("Rolling back migrations", "path", *migrationsPath)
-		if err := m.Down(); err != nil {
-			if err == migrate.ErrNoChange {
-				log.Info("No migrations to rollback")
-				return
-			}
-			log.Error("Migration rollback failed", sl.Err(err))
-			os.Exit(1)
+	log.Info("Applying migrations", "path", *migrationsPath)
+	if err := m.Up(); err != nil {
+		if err == migrate.ErrNoChange {
+			log.Info("No new migrations to apply")
+			return
 		}
-		log.Info("Migrations rolled back successfully")
-	} else {
-		log.Info("Applying migrations", "path", *migrationsPath)
-		if err := m.Up(); err != nil {
-			if err == migrate.ErrNoChange {
-				log.Info("No new migrations to apply")
-				return
-			}
-			log.Error("Migration failed", sl.Err(err))
-			os.Exit(1)
-		}
-		log.Info("Migrations applied successfully")
+		log.Error("Migration failed", sl.Err(err))
+		os.Exit(1)
 	}
+
+	log.Info("Migrations applied successfully")
 }
