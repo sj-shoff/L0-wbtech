@@ -12,6 +12,10 @@ migrate:
 send-order:
 	tr -d '\n' < ./backend/order.json | docker-compose exec -T kafka sh -c 'kafka-console-producer --broker-list kafka:9092 --topic orders'
 
+send-wrong-order:
+	docker-compose exec kafka bash -c \
+  	"echo '{\"invalid\":\"data\"}' | kafka-console-producer --broker-list kafka:9092 --topic orders"
+
 test-api:
 	curl -s http://localhost:8081/order/b563feb7b2b84b6test
 
