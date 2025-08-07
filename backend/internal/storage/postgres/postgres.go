@@ -137,7 +137,8 @@ func (s *PostgresStorage) GetOrder(ctx context.Context, orderUID string) (*model
 		return nil, fmt.Errorf("%s: %w", op, err)
 	}
 
-	deliveryQuery := `SELECT * FROM delivery WHERE order_uid = $1`
+	deliveryQuery := `SELECT name, phone, zip, city, address, region, email 
+                      FROM delivery WHERE order_uid = $1`
 	err = s.db.GetContext(ctx, &order.Delivery, deliveryQuery, orderUID)
 	if err != nil {
 		return nil, fmt.Errorf("%s: get delivery failed: %w", op, err)

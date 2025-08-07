@@ -3,9 +3,9 @@ package main
 import (
 	"L0-wbtech/internal/config"
 	"L0-wbtech/pkg/logger/sl"
+	"L0-wbtech/pkg/logger/slogsetup"
 	"flag"
 	"fmt"
-	"log/slog"
 	"os"
 
 	"github.com/golang-migrate/migrate/v4"
@@ -14,13 +14,13 @@ import (
 )
 
 func main() {
-
 	migrationsPath := flag.String("migrations-path", "", "Path to migrations")
+	migrateDown := flag.Bool("down", false, "Run migrations down (rollback)")
 	flag.Parse()
 
 	cfg := config.MustLoad()
 
-	log := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{}))
+	log := slogsetup.SetupLogger(cfg.Env)
 
 	if *migrationsPath == "" {
 		*migrationsPath = cfg.Migrations
@@ -51,15 +51,27 @@ func main() {
 		os.Exit(1)
 	}
 
-	log.Info("Applying migrations", "path", *migrationsPath)
-	if err := m.Up(); err != nil {
-		if err == migrate.ErrNoChange {
-			log.Info("No new migrations to apply")
-			return
+	if *migrateDown {
+		log.Info("Rolling back migrations", "path", *migrationsPath)
+		if err := m.Down(); err != nil {
+			if err == migrate.ErrNoChange {
+				log.Info("No migrations to rollback")
+				return
+			}
+			log.Error("Migration rollback failed", sl.Err(err))
+			os.Exit(1)
 		}
-		log.Error("Migration failed", sl.Err(err))
-		os.Exit(1)
+		log.Info("Migrations rolled back successfully")
+	} else {
+		log.Info("Applying migrations", "path", *migrationsPath)
+		if err := m.Up(); err != nil {
+			if err == migrate.ErrNoChange {
+				log.Info("No new migrations to apply")
+				return
+			}
+			log.Error("Migration failed", sl.Err(err))
+			os.Exit(1)
+		}
+		log.Info("Migrations applied successfully")
 	}
-
-	log.Info("Migrations applied successfully")
 }

@@ -11,8 +11,8 @@ RUN go mod download
 
 COPY . .
 
-RUN go build -ldflags="-w -s" -o app ./cmd/app/main.go
-RUN go build -ldflags="-w -s" -o migrator ./cmd/migrator/main.go
+RUN go build -ldflags="-w -s" -o app ./cmd/app/main.go && \
+    go build -ldflags="-w -s" -o migrator ./cmd/migrator/main.go
 
 FROM alpine:latest
 

@@ -1,4 +1,4 @@
-.PHONY: build run migrate send-order test-api
+.PHONY: build run migrate send-order test-api migrate-down
 
 build:
 	docker-compose build
@@ -12,5 +12,19 @@ migrate:
 send-order:
 	tr -d '\n' < ./backend/order.json | docker-compose exec -T kafka sh -c 'kafka-console-producer --broker-list kafka:9092 --topic orders'
 
+send-wrong-order:
+	docker-compose exec kafka bash -c \
+  	"echo '{\"invalid\":\"data\"}' | kafka-console-producer --broker-list kafka:9092 --topic orders"
+
 test-api:
 	curl -s http://localhost:8081/order/b563feb7b2b84b6test
+
+docker-clear:
+	docker-compose down -v --rmi all
+	docker system prune -a -f --volumes
+	sudo systemctl restart docker
+
+docker-rebuild:
+	docker-compose down -v
+	docker-compose build
+	docker-compose up

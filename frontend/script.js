@@ -13,7 +13,7 @@ async function getOrder() {
     hideJsonViewer();
     
     try {
-        const response = await fetch(`/order/${orderUid}`);
+        const response = await fetch(`/api/order/${orderUid}`);
         if (!response.ok) {
             const errorText = await response.text();
             throw new Error(`HTTP error! Status: ${response.status}, Message: ${errorText}`);
@@ -159,6 +159,7 @@ function displayOrder(order) {
 function toggleJson() {
     const viewer = document.getElementById('jsonViewer');
     viewer.style.display = viewer.style.display === 'none' ? 'block' : 'none';
+    
 }
 
 function showLoading(show) {
@@ -192,7 +193,6 @@ function hideJsonViewer() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    getOrder();
     
     document.getElementById('orderUid').addEventListener('keyup', event => {
         if (event.key === 'Enter') {
