@@ -62,7 +62,7 @@ func (s *orderService) GetOrder(ctx context.Context, orderUID string) (*model.Or
 	)
 
 	if order, ok := s.cache.Get(orderUID); ok {
-		log.Debug("Order retrieved from cache")
+		log.Info("Order retrieved from cache")
 		return order, nil
 	}
 

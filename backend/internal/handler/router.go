@@ -8,6 +8,7 @@ import (
 	stdErrors "errors"
 	"log/slog"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -45,7 +46,13 @@ func (h *APIHandler) GetOrder(c *gin.Context) {
 		return
 	}
 
+	start := time.Now()
+
 	order, err := h.service.GetOrder(context.Background(), orderUID)
+
+	dataFetchTime := time.Since(start)
+	c.Set("data_fetch_start", start)
+
 	if err != nil {
 		if stdErrors.Is(err, errors.ErrNotFound) {
 			log.Warn("order not found", "order_uid", orderUID)
@@ -59,6 +66,11 @@ func (h *APIHandler) GetOrder(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, order)
+
+	log.Debug("Data fetch completed",
+		"order_uid", orderUID,
+		"data_fetch_time", dataFetchTime,
+	)
 }
 
 func corsMiddleware() gin.HandlerFunc {
