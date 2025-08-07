@@ -158,7 +158,8 @@ function displayOrder(order) {
 
 function toggleJson() {
     const viewer = document.getElementById('jsonViewer');
-    viewer.style.display = viewer.style.display === 'none' ? 'block' : 'none';
+    viewer.classList.toggle('open');
+    
 }
 
 function showLoading(show) {
@@ -192,7 +193,6 @@ function hideJsonViewer() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    getOrder();
     
     document.getElementById('orderUid').addEventListener('keyup', event => {
         if (event.key === 'Enter') {
