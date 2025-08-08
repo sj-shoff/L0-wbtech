@@ -142,33 +142,61 @@ func (s *PostgresStorage) CreateOrder(ctx context.Context, order *model.Order) e
 func (s *PostgresStorage) GetOrder(ctx context.Context, orderUID string) (*model.Order, error) {
 	const op = "storage.postgres.GetOrder"
 
-	orderQuery := `SELECT * FROM orders WHERE order_uid = $1`
+	orderQuery := `
+		SELECT
+			order_uid, track_number, entry, locale,
+			internal_signature, customer_id, delivery_service,
+			shardkey, sm_id, date_created, oof_shard
+		FROM orders
+		WHERE order_uid = $1
+	`
 	var order model.Order
-	err := s.db.GetContext(ctx, &order, orderQuery, orderUID)
-	if err != nil {
+	if err := s.db.GetContext(ctx, &order, orderQuery, orderUID); err != nil {
 		if err == sql.ErrNoRows {
 			return nil, errors.ErrNotFound
 		}
 		return nil, fmt.Errorf("%s: %w", op, err)
 	}
 
-	deliveryQuery := `SELECT name, phone, zip, city, address, region, email 
-                      FROM delivery WHERE order_uid = $1`
-	err = s.db.GetContext(ctx, &order.Delivery, deliveryQuery, orderUID)
-	if err != nil {
+	deliveryQuery := `
+		SELECT name, phone, zip, city, address, region, email
+		FROM delivery
+		WHERE order_uid = $1
+	`
+	if err := s.db.GetContext(ctx, &order.Delivery, deliveryQuery, orderUID); err != nil {
+		if err == sql.ErrNoRows {
+			return nil, errors.ErrNotFound
+		}
 		return nil, fmt.Errorf("%s: get delivery failed: %w", op, err)
 	}
 
-	paymentQuery := `SELECT * FROM payment WHERE order_uid = $1`
-	err = s.db.GetContext(ctx, &order.Payment, paymentQuery, orderUID)
-	if err != nil {
+	paymentQuery := `
+		SELECT
+			id, transaction, request_id, currency, provider,
+			amount, payment_dt, bank, delivery_cost, goods_total, custom_fee
+		FROM payment
+		WHERE order_uid = $1
+	`
+	if err := s.db.GetContext(ctx, &order.Payment, paymentQuery, orderUID); err != nil {
+		if err == sql.ErrNoRows {
+			return nil, errors.ErrNotFound
+		}
 		return nil, fmt.Errorf("%s: get payment failed: %w", op, err)
 	}
 
-	itemsQuery := `SELECT * FROM items WHERE order_uid = $1`
-	err = s.db.SelectContext(ctx, &order.Items, itemsQuery, orderUID)
-	if err != nil {
-		return nil, fmt.Errorf("%s: get items failed: %w", op, err)
+	itemsQuery := `
+		SELECT
+			chrt_id, track_number, price, rid,
+			name, sale, size, total_price, nm_id, brand, status
+		FROM items
+		WHERE order_uid = $1
+	`
+	if err := s.db.SelectContext(ctx, &order.Items, itemsQuery, orderUID); err != nil {
+		if err == sql.ErrNoRows {
+			order.Items = []model.Item{}
+		} else {
+			return nil, fmt.Errorf("%s: get items failed: %w", op, err)
+		}
 	}
 
 	return &order, nil
