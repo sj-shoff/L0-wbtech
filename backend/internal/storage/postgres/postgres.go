@@ -52,8 +52,17 @@ func (s *PostgresStorage) CreateOrder(ctx context.Context, order *model.Order) e
 		ON CONFLICT (order_uid) DO NOTHING
 	`
 	_, err = tx.ExecContext(ctx, orderQuery,
-		order.OrderUID, order.TrackNumber, order.Entry, order.Locale, order.InternalSignature,
-		order.CustomerID, order.DeliveryService, order.Shardkey, order.SmID, order.DateCreated, order.OofShard)
+		order.OrderUID,
+		order.TrackNumber,
+		order.Entry,
+		order.Locale,
+		order.InternalSignature,
+		order.CustomerID,
+		order.DeliveryService,
+		order.Shardkey,
+		order.SmID,
+		order.DateCreated,
+		order.OofShard)
 	if err != nil {
 		return fmt.Errorf("%s: insert order failed: %w", op, err)
 	}
@@ -64,8 +73,14 @@ func (s *PostgresStorage) CreateOrder(ctx context.Context, order *model.Order) e
 		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 	`
 	_, err = tx.ExecContext(ctx, deliveryQuery,
-		order.OrderUID, order.Delivery.Name, order.Delivery.Phone, order.Delivery.Zip,
-		order.Delivery.City, order.Delivery.Address, order.Delivery.Region, order.Delivery.Email)
+		order.OrderUID,
+		order.Delivery.Name,
+		order.Delivery.Phone,
+		order.Delivery.Zip,
+		order.Delivery.City,
+		order.Delivery.Address,
+		order.Delivery.Region,
+		order.Delivery.Email)
 	if err != nil {
 		return fmt.Errorf("%s: insert delivery failed: %w", op, err)
 	}
