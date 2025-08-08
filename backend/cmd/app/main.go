@@ -4,6 +4,7 @@ import (
 	"L0-wbtech/internal/app"
 	"L0-wbtech/internal/cache"
 	"L0-wbtech/internal/config"
+	"L0-wbtech/internal/kafka"
 	"L0-wbtech/internal/service"
 	"L0-wbtech/internal/storage/postgres"
 	"L0-wbtech/pkg/logger/sl"
@@ -32,7 +33,13 @@ func main() {
 		log.Error("Failed to restore cache", sl.Err(err))
 	}
 
-	consumer := app.NewKafkaConsumer(cfg, orderService, log)
+	consumer := kafka.NewConsumer(
+		cfg.Kafka.Brokers,
+		cfg.Kafka.Topic,
+		cfg.Kafka.GroupID,
+		orderService,
+		log,
+	)
 
 	application := app.New(cfg, orderService, consumer, log)
 	application.Run()
